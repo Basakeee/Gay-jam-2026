@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MaskHook
   maskData:
     jumpHeight: 5
-    wallDragSpeed: 0
+    wallFrictionSlide: 1
     cooldownInterval: 2
     currentCooldown: -0.002028937
   hookRange: 0

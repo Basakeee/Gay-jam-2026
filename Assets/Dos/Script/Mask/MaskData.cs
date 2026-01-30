@@ -6,14 +6,13 @@ public class MaskData
 {
     [Header("Config")]
     public float jumpHeight;
-    public float wallDragSpeed;
+    [Range(0.01f,2f)] public float wallFrictionSlide;
     public float cooldownInterval;
     public float currentCooldown;
 }
 [CreateAssetMenu(fileName = "MaskData", menuName = "ScriptableObjects/MaskNormal")]
 public class MaskNormal : MaskBase
 {
-
     public override void ActiveSkill(GameObject parent)
     {
         maskData.currentCooldown = maskData.cooldownInterval;
@@ -31,45 +30,45 @@ public class MaskDash : MaskBase
     public override void ActiveSkill(GameObject parent)
     {
         maskData.currentCooldown = maskData.cooldownInterval;
-        
         Rigidbody2D rb = parent.GetComponent<Rigidbody2D>();
         PlayerController pc = parent.GetComponent<PlayerController>(); 
-
-
         int direction = pc.GetFacingRight() ? 1 : -1; 
-
-      
-        pc.StartCoroutine(DashRoutine(rb, direction));
         
-        Debug.Log("MaskDash ActiveSkill Started");
+        pc.StartCoroutine(DashRoutine(rb, pc, direction)); // ส่ง pc เข้าไป
     }
 
-    private IEnumerator DashRoutine(Rigidbody2D rb, int direction)
+    private IEnumerator DashRoutine(Rigidbody2D rb, PlayerController pc, int direction)
     {
         Vector2 startPos = rb.position;
         float timer = 0f;
-        
         float originalGravity = rb.gravityScale;
+        
+        // 1. เริ่ม Dash: บอก PlayerController ให้เปิดสถานะชนของ
+        pc.OnStartDashing(); 
+        
         rb.gravityScale = 0;
 
+        // วนลูปการเคลื่อนที่
         while (timer < dashTime)
         {
+            // ถ้า Dash ชนของแล้ว (isDashing ถูกปิดจาก PlayerController) ให้หลุดลูปทันที
+            if (!pc.IsDashing()) break;
+
             float distanceTraveled = Vector2.Distance(startPos, rb.position);
-            
-            if (distanceTraveled >= dashDistanceHardLimit)
-            {
-                Debug.Log("Dash stopped by Distance Limit");
-                break; 
-            }
+            if (distanceTraveled >= dashDistanceHardLimit) break; 
 
             rb.linearVelocity = new Vector2(dashSpeed * direction, 0);
-
             timer += Time.deltaTime;
-            
             yield return null; 
         }
 
-        rb.linearVelocity = Vector2.zero;
+        // 2. จบ Dash: บอก PlayerController ให้ปิดสถานะ
+        if (pc.IsDashing()) // ถ้ายัง Dash อยู่ (จบเพราะหมดเวลา ไม่ใช่ชนของ)
+        {
+            rb.linearVelocity = Vector2.zero;
+            pc.OnEndDashing();
+        }
+        
         rb.gravityScale = originalGravity; 
     }
 }

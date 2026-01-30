@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MaskDash
   maskData:
     jumpHeight: 5
-    wallDragSpeed: 0
+    wallFrictionSlide: 2
     cooldownInterval: 2
-    currentCooldown: -0.002891682
+    currentCooldown: -0.08374089
   dashSpeed: 15
   dashTime: 0.4
   dashDistanceHardLimit: 4

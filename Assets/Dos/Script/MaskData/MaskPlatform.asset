@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MaskPlatform
   maskData:
     jumpHeight: 5
-    wallDragSpeed: 0
+    wallFrictionSlide: 1
     cooldownInterval: 2
-    currentCooldown: -0.004118897
+    currentCooldown: -0.001737345
   platformPrefab: {fileID: 4682657227911560102, guid: 8df404112d97dec40a41e2205ecea415, type: 3}
   timePlatformLast: 3
