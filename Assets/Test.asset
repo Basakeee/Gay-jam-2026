@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af7181f404f1447c0a7a17b3070b952b, type: 3}
+  m_Name: Test
+  m_EditorClassIdentifier: 
+  m_Angles:
+  - m_Start: -44
+    m_End: 46
+    m_Order: 0
+    m_Sprites:
+    - {fileID: 551926454, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_Start: -134
+    m_End: -44
+    m_Order: 0
+    m_Sprites:
+    - {fileID: 551926454, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_Start: -222
+    m_End: -134
+    m_Order: 0
+    m_Sprites:
+    - {fileID: 551926454, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_Start: 47
+    m_End: 137
+    m_Order: 0
+    m_Sprites:
+    - {fileID: 551926454, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  m_FillTexture: {fileID: 2800000, guid: 3620c552ef881df4796a5116f18a73cf, type: 3}
+  m_CornerSprites:
+  - m_CornerType: 0
+    m_Sprites:
+    - {fileID: -573299223, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_CornerType: 1
+    m_Sprites:
+    - {fileID: -783857943, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_CornerType: 2
+    m_Sprites:
+    - {fileID: -2127544784, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_CornerType: 3
+    m_Sprites:
+    - {fileID: 968204899, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_CornerType: 4
+    m_Sprites:
+    - {fileID: 156798053, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_CornerType: 5
+    m_Sprites:
+    - {fileID: -2007672748, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_CornerType: 6
+    m_Sprites:
+    - {fileID: -1195833788, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  - m_CornerType: 7
+    m_Sprites:
+    - {fileID: 379226357, guid: 2193479b5ee51614f958f8ba90f1e9dc, type: 3}
+  m_FillOffset: 0
+  m_UseSpriteBorders: 1
