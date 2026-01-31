@@ -110,7 +110,7 @@ public class MaskPlatform : MaskBase
             // ถ้าว่างเปล่า ค่อยสร้าง
             maskData.currentCooldown = maskData.cooldownInterval; // เริ่มนับ Cooldown เมื่อสร้างสำเร็จเท่านั้น
             
-            GameObject platform = Instantiate(platformPrefab, spawnPos.position, Quaternion.identity);
+            GameObject platform = Instantiate(platformPrefab, spawnPos.position, platformPrefab.transform.rotation);
             Destroy(platform, timePlatformLast);
             Debug.Log("Platform Created!");
         }
