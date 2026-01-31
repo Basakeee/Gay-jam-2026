@@ -76,14 +76,18 @@ public class MaskDash : MaskBase
 public class MaskHook : MaskBase
 {
     [Header("Hook Config")]
-    public float hookRange;
-
-    public float hookSpeed;
+    public float hookRange = 10f;
+    public float hookSpeed = 15f;
 
     public override void ActiveSkill(GameObject parent)
     {
         maskData.currentCooldown = maskData.cooldownInterval;
-        Debug.Log("MaskHook ActiveSkill");
+        PlayerController pc = parent.GetComponent<PlayerController>();
+        
+        // สั่งให้ PlayerController เริ่มกระบวนการ Hook
+        pc.StartHook(hookRange, hookSpeed);
+        
+        Debug.Log("MaskHook Fired");
     }
 }
 [CreateAssetMenu(fileName = "MaskData", menuName = "ScriptableObjects/MaskPlatform")]
@@ -91,15 +95,29 @@ public class MaskPlatform : MaskBase
 {
     [Header("Platform Config")]
     public GameObject platformPrefab;
-
     public float timePlatformLast;
+    public float checkRadius = 0.5f; // รัศมีเช็คพื้น
+    public LayerMask whatIsGround;   // Layer ของพื้น (เพื่อไม่ให้สร้างทับพื้นเดิม)
 
     public override void ActiveSkill(GameObject parent)
     {
-        maskData.currentCooldown = maskData.cooldownInterval;
         PlayerController pc = parent.GetComponent<PlayerController>();
-        GameObject platform = Instantiate(platformPrefab,pc.GetPlatformSpawnPos().position, platformPrefab.transform.rotation);
-        Destroy(platform, timePlatformLast);
-        Debug.Log("MaskPlatform ActiveSkill");
+        Transform spawnPos = pc.GetPlatformSpawnPos(); // จุดเสก (ควรอยู่ใต้เท้า)
+
+        // 1. เช็คว่าตรงจุดที่จะเสก มีพื้นอยู่แล้วหรือเปล่า?
+        if (!Physics2D.OverlapCircle(spawnPos.position, checkRadius, whatIsGround))
+        {
+            // ถ้าว่างเปล่า ค่อยสร้าง
+            maskData.currentCooldown = maskData.cooldownInterval; // เริ่มนับ Cooldown เมื่อสร้างสำเร็จเท่านั้น
+            
+            GameObject platform = Instantiate(platformPrefab, spawnPos.position, Quaternion.identity);
+            Destroy(platform, timePlatformLast);
+            Debug.Log("Platform Created!");
+        }
+        else
+        {
+            Debug.Log("Cannot create platform here (Ground detected).");
+            // ไม่เริ่มนับ Cooldown ผู้เล่นจะได้กดใหม่ได้เลย
+        }
     }
 }

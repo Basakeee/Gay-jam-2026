@@ -16,6 +16,6 @@ MonoBehaviour:
     jumpHeight: 5
     wallFrictionSlide: 1
     cooldownInterval: 2
-    currentCooldown: -0.002028937
-  hookRange: 0
-  hookSpeed: 0
+    currentCooldown: -0.00036509242
+  hookRange: 10
+  hookSpeed: 15
