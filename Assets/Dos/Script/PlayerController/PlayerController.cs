@@ -37,6 +37,12 @@ public class PlayerController : MonoBehaviour
     [Header("Hook Config")]
     public LineRenderer hookLineRenderer; // ลาก Component LineRenderer มาใส่
     public LayerMask hookLayer; // Layer ของ HookTarget
+    public LayerMask obstacleLayer;       // Layer ของกำแพง/สิ่งกีดขวาง (Ground, Wall)
+    public GameObject targetIndicator;    // Sprite เป้าเล็งที่จะไปโผล่บน HookTarget
+    public LineRenderer rangeIndicator;   // เส้นวงกลมบอกระยะ (LineRenderer แบบ Loop)
+    [Range(0, 50)] public int rangeCircleSegments = 50; // ความละเอียดวงกลม
+    public float indicatorShowBuffer = 5f;
+    private HookTarget _currentValidTarget; // เก็บเป้าหมายที่เล็งได้ปัจจุบัน
 
     [Header("Other Config")] public int CurrentRoomIndex = 0;
 
@@ -95,7 +101,16 @@ public class PlayerController : MonoBehaviour
         {
             HandleDashCollision();
         }
-
+        if (currentMaskType == MaskType.Hook)
+        {
+            HandleHookAiming();
+        }
+        else
+        {
+            // ปิด Indicator เมื่อไม่ได้ใช้หน้ากาก Hook
+            if (targetIndicator != null) targetIndicator.SetActive(false);
+            if (rangeIndicator != null) rangeIndicator.enabled = false;
+        }
         CheckCanJump();
         CheckTouchingWall();
         
@@ -269,41 +284,119 @@ public class PlayerController : MonoBehaviour
         if (_rb.linearVelocity.y > 0)
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, _rb.linearVelocity.y * jumpCutMultipier);
     }
-    public void StartHook(float range, float speed)
+    private void HandleHookAiming()
     {
-        if (isHooking) return;
-
-        // 1. ใช้ OverlapCircleAll เพื่อหา HookTarget ทั้งหมดในระยะ
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range, hookLayer);
-        foreach (Collider2D hit in hits)
+        // 1. ดึงระยะ Hook จริงๆ มาก่อน
+        float realRange = 0f;
+        if (allMask[(int)currentMaskType] is MaskHook hookMask)
         {
-            Debug.Log(hit.gameObject.name);
+            realRange = hookMask.hookRange;
         }
-        if (hits.Length > 0)
-        {
-            HookTarget closestTarget = null;
-            float closestDistance = float.MaxValue;
 
-            // 2. วนลูปหาอันที่ "ใกล้ตัวที่สุด" (เพื่อความแม่นยำ)
-            foreach (var hit in hits)
+        // --- [ส่วนที่เพิ่มใหม่] เช็คการแสดงผลวงกลม ---
+        
+        // ระยะตรวจสอบ = ระยะจริง + ระยะเผื่อ (เช่น 10 + 5 = 15)
+        float checkRange = realRange + indicatorShowBuffer;
+
+        // เช็คว่ามี HookTarget อยู่ในระยะไกลๆ บ้างไหม (แค่เช็คว่ามีไหม ไม่ต้องหาตัวที่ดีที่สุด)
+        bool isAnyTargetNearby = Physics2D.OverlapCircle(transform.position, checkRange, hookLayer);
+
+        if (isAnyTargetNearby)
+        {
+            // ถ้ามีของอยู่แถวๆ นี้ ให้วาดวงกลม (ขนาดเท่าระยะจริง)
+            DrawRangeCircle(realRange);
+        }
+        else
+        {
+            // ถ้าไม่มีอะไรเลย ปิดวงกลมไปซะ จะได้ไม่รกตา
+            if (rangeIndicator != null) rangeIndicator.enabled = false;
+        }
+
+        // ------------------------------------------
+
+        // 3. หาเป้าหมายที่จะล็อคจริงๆ (ใช้ระยะ realRange เท่านั้น ห้ามโกงระยะ)
+        _currentValidTarget = FindBestHookTarget(realRange);
+
+        // 4. อัปเดตตัวชี้เป้า (Crosshair)
+        if (_currentValidTarget != null)
+        {
+            if (targetIndicator != null)
             {
-                float distance = Vector2.Distance(transform.position, hit.transform.position);
-                if (distance < closestDistance)
+                targetIndicator.SetActive(true);
+                targetIndicator.transform.position = _currentValidTarget.transform.position;
+            }
+        }
+        else
+        {
+            if (targetIndicator != null) targetIndicator.SetActive(false);
+        }
+    }
+
+    // --- ฟังก์ชันคำนวณ: หาเป้าที่ดีที่สุดและเช็คกำแพง ---
+    private HookTarget FindBestHookTarget(float range)
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range, hookLayer);
+        
+        HookTarget bestTarget = null;
+        float closestDistance = float.MaxValue;
+
+        foreach (var hit in hits)
+        {
+            // เช็คระยะห่าง
+            float distance = Vector2.Distance(transform.position, hit.transform.position);
+            
+            // เงื่อนไข 1: ต้องใกล้กว่าตัวที่เคยเจอ
+            if (distance < closestDistance)
+            {
+                // เงื่อนไข 2: ต้องไม่มีอะไรบัง (Raycast Check)
+                Vector2 direction = (hit.transform.position - transform.position).normalized;
+                
+                // ยิง Ray จากตัวเรา ไปหาเป้าหมาย (ระยะ = distance)
+                // ตรวจจับเฉพาะ obstacleLayer
+                RaycastHit2D obstacleHit = Physics2D.Raycast(transform.position, direction, distance, obstacleLayer);
+
+                // ถ้า Ray ไม่ชนอะไรเลย (null) แสดงว่าทางสะดวก
+                if (obstacleHit.collider == null)
                 {
                     HookTarget target = hit.GetComponent<HookTarget>();
                     if (target != null)
                     {
                         closestDistance = distance;
-                        closestTarget = target;
+                        bestTarget = target;
                     }
                 }
             }
+        }
 
-            // 3. ถ้าเจอเป้าหมาย ให้เริ่ม Hook ใส่ตัวที่ใกล้ที่สุด
-            if (closestTarget != null)
-            {
-                StartCoroutine(HookRoutine(closestTarget, closestTarget.transform.position, speed));
-            }
+        return bestTarget;
+    }
+
+    // --- ฟังก์ชันวาดวงกลมด้วย LineRenderer ---
+    private void DrawRangeCircle(float radius)
+    {
+        if (rangeIndicator == null) return;
+        rangeIndicator.enabled = true;
+        
+        rangeIndicator.positionCount = rangeCircleSegments + 1;
+        float angle = 0f;
+        
+        for (int i = 0; i <= rangeCircleSegments; i++)
+        {
+            float x = Mathf.Sin(Mathf.Deg2Rad * angle) * radius;
+            float y = Mathf.Cos(Mathf.Deg2Rad * angle) * radius;
+
+            rangeIndicator.SetPosition(i, transform.position + new Vector3(x, y, 0));
+            angle += (360f / rangeCircleSegments);
+        }
+    }
+    public void StartHook(float range, float speed)
+    {
+        if (isHooking) return;
+
+        // ไม่ต้อง OverlapCircle ใหม่แล้ว ใช้ค่าจาก HandleHookAiming ได้เลย
+        if (_currentValidTarget != null)
+        {
+            StartCoroutine(HookRoutine(_currentValidTarget, _currentValidTarget.transform.position, speed));
         }
     }
 
