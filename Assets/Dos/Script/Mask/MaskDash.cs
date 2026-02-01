@@ -14,8 +14,8 @@ public class MaskDash : MaskBase
         maskData.currentCooldown = maskData.cooldownInterval;
         Rigidbody2D rb = parent.GetComponent<Rigidbody2D>();
         PlayerController pc = parent.GetComponent<PlayerController>(); 
-        int direction = pc.GetFacingRight() ? 1 : -1; 
-        
+        int direction = pc.GetFacingRight() ? 1 : -1;
+        pc.PlaySkillAnimation();
         pc.StartCoroutine(DashRoutine(rb, pc, direction)); // ส่ง pc เข้าไป
     }
 

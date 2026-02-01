@@ -31,6 +31,7 @@ public class MaskPlatform : MaskBase
             Instantiate(spawnParticles, spawnPos.position, Quaternion.identity);
             AudioManager.instance.PlayOneShotSFX(spawnSound);
             pc.StartCoroutine(SpawnParticle(platform));
+            pc.PlaySkillAnimation();
             Destroy(platform, timePlatformLast);
             Debug.Log("Platform Created!");
         }

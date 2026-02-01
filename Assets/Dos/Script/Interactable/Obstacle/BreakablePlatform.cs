@@ -15,7 +15,7 @@ public class BreakablePlatform : MonoBehaviour
         _ren = GetComponent<SpriteRenderer>();
     }
 
-    public void Break()
+    public virtual void Break()
     {
         if (breakEffect != null) Instantiate(breakEffect, transform.position, Quaternion.identity);
 

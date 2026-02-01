@@ -113,11 +113,18 @@ MonoBehaviour:
   waitTime: 1
   fallDelay: 0.5
   fallGravity: 3
+  fallSpeed: 10
   destroyDelay: 0.5
   respawnDelay: 3
   stickySpeedMultiplier: 0.5
   slipperyMaterial: {fileID: 6200000, guid: 13613696222637a44976654665572667, type: 2}
   stickyMaterial: {fileID: 6200000, guid: 6231b007afd988f409de23d124102ec3, type: 2}
+  hookSpeed: 6
+  isLocked: 0
+  lockVisuals: {fileID: 0}
+  stickySound: {fileID: 8300000, guid: a13e0286546c4b44f9c2ec8dace0ddcb, type: 3}
+  weakBreakSound: {fileID: 0}
+  dropSound: {fileID: 0}
 --- !u!61 &3996602077333798579
 BoxCollider2D:
   m_ObjectHideFlags: 0

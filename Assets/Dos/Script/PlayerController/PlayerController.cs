@@ -49,6 +49,11 @@ public class PlayerController : MonoBehaviour
     public float indicatorShowBuffer = 5f;
     private HookTarget _currentValidTarget; // เก็บเป้าหมายที่เล็งได้ปัจจุบัน
 
+    [Header("Wall Jump Config")]
+    public Vector2 wallJumpForce = new Vector2(10f, 15f); // แรงกระโดด (X = ถีบออก, Y = ส่งขึ้น)
+    public float wallJumpDuration = 0.2f; // ระยะเวลาที่ล็อคการควบคุม (วินาที)
+    private bool _isWallJumping; // สถานะว่ากำลังอยู่ในช่วงถีบตัวหรือไม่
+
     [Header("Other Config")] 
     public int CurrentRoomIndex = 0;
     [Header("Camera Transition")]
@@ -66,7 +71,9 @@ public class PlayerController : MonoBehaviour
     public AudioClip hookSound;
     public AudioClip dashSound;
     public AudioClip damageSound;
-    
+    public AudioClip jumpSound;
+    public AudioClip landSound;
+
     [Header("Walk SFX")]
     public AudioClip walkSound;
     public float walkStepInterval = 0.4f; // ระยะห่างระว่างก้าว (วินาที)
@@ -284,7 +291,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleWallSlide()
     {
-        if (_isTouchingWall && !_canJump && _rb.linearVelocity.y < 0 && _moveInput.x != 0)
+        if (_isTouchingWall && !_canJump && _rb.linearVelocity.y < 0 && _moveInput.x != 0 && !_isWallJumping)
         {
             _isWallSliding = true;
         }
@@ -341,6 +348,10 @@ public class PlayerController : MonoBehaviour
         if (!wasGrounded && _canJump && _rb.linearVelocity.y <= 0.1f)
         {
             SpawnDust(); // เรียก Effect ฝุ่น
+            if (landSound != null && _audioSource != null)
+            {
+                _audioSource.PlayOneShot(landSound);
+            }
         }
     }
     
@@ -348,6 +359,7 @@ public class PlayerController : MonoBehaviour
 
     private void PlayerMove()
     {
+        if (_isWallJumping) return;
         FlipSprite();
         float targetSpeedX = _moveInput.x * speed;
         float newSpeedX;
@@ -396,6 +408,14 @@ public class PlayerController : MonoBehaviour
                 _transition.TriggerPlatformTransition();
                 break;
         }
+        StartCoroutine(hideCharacter());
+    }
+    private IEnumerator hideCharacter()
+    {
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        sr.enabled = false;
+        yield return new WaitForSeconds(0.5f);
+        sr.enabled = true;
     }
     private void ApplyMaskVisuals(int maskIndex)
     {
@@ -426,10 +446,59 @@ public class PlayerController : MonoBehaviour
 
     private void JumpStart()
     {
-        if (allMask[(int)currentMaskType] == null || allMask.Count == 0 || !_canJump) return;
-        float jumpHeight = allMask[(int)currentMaskType].maskData.jumpHeight;
-        _rb.AddForce(Vector3.up * jumpHeight, ForceMode2D.Impulse);
+        if (allMask[(int)currentMaskType] == null || allMask.Count == 0) return;
+
+        // 1. การกระโดดปกติจากพื้น
+        if (_canJump)
+        {
+            float jumpHeight = allMask[(int)currentMaskType].maskData.jumpHeight;
+            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0); // รีเซ็ตความเร็วแกน Y ก่อนโดด
+            _rb.AddForce(Vector3.up * jumpHeight, ForceMode2D.Impulse);
+            SpawnDust();
+
+            if (jumpSound != null && _audioSource != null)
+            {
+                // Random Pitch นิดหน่อยเพื่อให้เสียงไม่ซ้ำซาก
+                _audioSource.pitch = UnityEngine.Random.Range(0.95f, 1.05f);
+                _audioSource.PlayOneShot(jumpSound);
+            }
+        }
+        // 2. [เพิ่มใหม่] การ Wall Jump (ต้องติดกำแพง และ ไม่ติดพื้น)
+        else if (_isTouchingWall && !_canJump)
+        {
+            StartCoroutine(WallJumpRoutine());
+        }
+    }
+
+    private IEnumerator WallJumpRoutine()
+    {
+        _isWallJumping = true;
+        _anim.SetBool("IsUsingWallJump", _isWallJumping);
+        // คำนวณทิศทางที่จะถีบตัวออก (ตรงข้ามกับด้านที่หันหน้าเข้ากำแพง)
+        float jumpDirection = _facingRight ? -1 : 1;
+
+        // ใส่แรงถีบตัว
+        _rb.linearVelocity = Vector2.zero; // รีเซ็ตความเร็วก่อนเพื่อให้แรงสม่ำเสมอ
+        _rb.AddForce(new Vector2(wallJumpForce.x * jumpDirection, wallJumpForce.y), ForceMode2D.Impulse);
+        if (jumpSound != null && _audioSource != null)
+        {
+            _audioSource.PlayOneShot(jumpSound);
+        }
+        // ถ้ากระโดดแล้วต้องหันหน้าไปทิศตรงข้ามทันที
+        if ((jumpDirection > 0 && !_facingRight) || (jumpDirection < 0 && _facingRight))
+        {
+            _facingRight = !_facingRight;
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * jumpDirection, transform.localScale.y, transform.localScale.z);
+        }
+
         SpawnDust();
+
+        // รอเวลา Lock Input สักพักเพื่อให้ตัวละครลอยออกจากกำแพงได้จริง
+        yield return new WaitForSeconds(wallJumpDuration);
+
+        _isWallJumping = false;
+        _anim.SetBool("IsUsingWallJump", _isWallJumping);
+
     }
 
     private void JumpStop()
@@ -702,6 +771,14 @@ public class PlayerController : MonoBehaviour
         CurrentCameraTransitionCooldown = CameraTransitionInterval;
         _rb.linearVelocity = new Vector2(0f, _rb.linearVelocity.y);
         _moveInput = Vector2.zero;
+    }
+    public void PlaySkillAnimation()
+    {
+        _anim.SetTrigger("UsingSkill");
+    }
+    public void AddNewMask(MaskBase newMask)
+    {
+        allMask.Add(newMask);
     }
     // Getter
     public bool GetFacingRight() => _facingRight;

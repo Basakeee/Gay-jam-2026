@@ -14,7 +14,7 @@ public class MaskHook : MaskBase
         
         // ส่งค่า hookRange ไปด้วย (แม้ pc จะรู้อยู่แล้วจากการเล็ง แต่ส่งไปเพื่อยืนยัน)
         pc.StartHook(hookRange, hookSpeed);
-        
+        pc.PlaySkillAnimation();
         Debug.Log("MaskHook Fired");
     }
 }
