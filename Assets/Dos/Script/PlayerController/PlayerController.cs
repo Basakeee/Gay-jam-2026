@@ -73,6 +73,7 @@ public class PlayerController : MonoBehaviour
     public AudioClip damageSound;
     public AudioClip jumpSound;
     public AudioClip landSound;
+    public AudioClip changeMaskSound;
 
     [Header("Walk SFX")]
     public AudioClip walkSound;
@@ -405,6 +406,7 @@ public class PlayerController : MonoBehaviour
                 _transition.TriggerPlatformTransition();
                 break;
         }
+        AudioManager.instance.PlayOneShotSFX(changeMaskSound);
         StartCoroutine(hideCharacter());
     }
     private IEnumerator hideCharacter()

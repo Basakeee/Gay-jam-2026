@@ -5385,10 +5385,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   allMask:
-  - {fileID: 11400000, guid: 14433667ef1a0b8418c32377ea5b5bfd, type: 2}
+  - {fileID: 0}
   - {fileID: 11400000, guid: c431e98234eb9a042a24923af2a886ae, type: 2}
-  - {fileID: 11400000, guid: 9eb83b5914e941944bedbced3c72ad6d, type: 2}
-  - {fileID: 11400000, guid: c651b58f44ae1d04bbe457b7ff9ba1b7, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
   currentMaskType: 0
   speed: 4
   jumpCheckRange: 2.6
@@ -5431,8 +5431,9 @@ MonoBehaviour:
   hookSound: {fileID: 8300000, guid: df523547c9e38bc4c872c5e53934a510, type: 3}
   dashSound: {fileID: 8300000, guid: 4711819c9aa42a34db4287766d2d7df0, type: 3}
   damageSound: {fileID: 8300000, guid: 80abce7c585c3f14a8df597fdb21b2a6, type: 3}
-  jumpSound: {fileID: 0}
+  jumpSound: {fileID: 8300000, guid: 1cd6d5896c9cd4d46990803fb52e3516, type: 3}
   landSound: {fileID: 8300000, guid: 0c861c13590b18a4a8c06b4dc3adb24a, type: 3}
+  changeMaskSound: {fileID: 8300000, guid: 8976ca391d4dd0c47bfa2e7df8e570d1, type: 3}
   walkSound: {fileID: 8300000, guid: 54a3fdce856142a498ff60d51460b8be, type: 3}
   walkStepInterval: 0.4
 --- !u!50 &6936216437833703953
