@@ -16,7 +16,10 @@ MonoBehaviour:
     jumpHeight: 5
     wallFrictionSlide: 2
     cooldownInterval: 2
-    currentCooldown: -0.08374089
+    currentCooldown: -0.0020414335
+  animatorOverride: {fileID: 22100000, guid: 8f136ff23b5114349a1d13eec36878a1, type: 2}
+  colliderSize: {x: 1, y: 2}
+  colliderOffset: {x: 0, y: 0}
   dashSpeed: 15
   dashTime: 0.4
   dashDistanceHardLimit: 4

@@ -4,13 +4,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[Serializable]
+[RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(CapsuleCollider2D))]
 public class PlayerController : MonoBehaviour
 {
     // ... (Header และตัวแปรเดิม คงไว้เหมือนเดิม) ...
     [Header("Mask")]
     public List<MaskBase> allMask;
     public MaskType currentMaskType;
+    
+    [Header("Animation Components")]
+    private Animator _anim;
+    private CapsuleCollider2D _col;
 
     [Header("Player Movement Config")]
     public float speed;
@@ -44,23 +49,45 @@ public class PlayerController : MonoBehaviour
     public float indicatorShowBuffer = 5f;
     private HookTarget _currentValidTarget; // เก็บเป้าหมายที่เล็งได้ปัจจุบัน
 
-    [Header("Other Config")] public int CurrentRoomIndex = 0;
+    [Header("Other Config")] 
+    public int CurrentRoomIndex = 0;
+    [Header("Camera Transition")]
+    public float CameraTransitionInterval = 1.5f;
+    public float CurrentCameraTransitionCooldown;
+
+    [Header("Particle Config")] 
+    public ParticleSystem dustPS;
+    public ParticleSystem diePS;
+    public GameObject dashImpactPrefab; // ลาก Prefab ที่เพิ่งทำมาใส่ตรงนี้
+    public ParticleSystem HookImpact;
+    public float hitStopDuration = 0.1f;
+
+    [Header("SFX Config")] 
+    public AudioClip hookSound;
+    public AudioClip dashSound;
+    public AudioClip damageSound;
+    
+    [Header("Walk SFX")]
+    public AudioClip walkSound;
+    public float walkStepInterval = 0.4f; // ระยะห่างระว่างก้าว (วินาที)
+    private float _currentWalkTimer;
+    private AudioSource _audioSource; // แหล่งกำเนิดเสียงส่วนตัวของ Player
+    private float _stopDurationTimer = 0f;
 
     private bool isHooking = false;
     
     private Rigidbody2D _rb;
     private GameControl _controls;
     private Vector2 _moveInput;
+    private TransitionCharacter  _transition;
     private Transform _platformSpawnPos;
     private CircleCollider2D _dashCollider;
     private bool _canJump;
     private bool _facingRight = true;
+    private bool isDead;
     
     private bool _isTouchingWall;
     private bool _isWallSliding;
-
-    public float CameraTransitionInterval = 1.5f;
-    public float CurrentCameraTransitionCooldown;
     
     //Abilities
     private bool isDashing; // สถานะ Dash
@@ -86,16 +113,22 @@ public class PlayerController : MonoBehaviour
     {
         _rb = GetComponent<Rigidbody2D>();
         _platformSpawnPos = GetComponentInChildren<Transform>().Find("PlatformSpawnPos");
+        _audioSource = GetComponent<AudioSource>();
+        _anim = GetComponent<Animator>();
+        _col = GetComponent<CapsuleCollider2D>();
+        _transition = GetComponentInChildren<TransitionCharacter>();
         // หา Collider ลูก ถ้าหาไม่เจอลองลากใส่แบบ Public แทนก็ได้
         Transform dashColTransform = GetComponentInChildren<Transform>().Find("dashCollider");
         if(dashColTransform != null)
              _dashCollider = dashColTransform.GetComponent<CircleCollider2D>();
              
         if (wallMask == 0) wallMask = groundMask;
+        ChangeMask((int)currentMaskType);
     }
 
     void Update()
     {
+        if (isDead) return;
         // 1. ถ้ากำลัง Dash ให้เช็คการชน
         if (isDashing)
         {
@@ -119,14 +152,69 @@ public class PlayerController : MonoBehaviour
         {
             PlayerMove();
             HandleWallSlide(); 
+            HandleWalkSound(); // [เพิ่มใหม่] เรียกฟังก์ชันเสียงเดิน
         }
 
         CameraTransitionTicking();
         FreezeGravity();
         TickingDownMaskSwap();
         MaskCooldownTicking();
+        UpdateAnimationParameters();
     }
+    private void UpdateAnimationParameters()
+    {
+        if (_anim == null) return;
 
+        // ส่งความเร็วการเดิน (ค่าสัมบูรณ์)
+        _anim.SetFloat("Speed", Mathf.Abs(_moveInput.x));
+
+        // ส่งสถานะพื้น
+        _anim.SetBool("IsGrounded", _canJump);
+
+        // ส่งความเร็วแนวดิ่ง (เพื่อแยก JumpUp / JumpDown)
+        _anim.SetFloat("VerticalVelocity", _rb.linearVelocity.y);
+
+        // ส่งสถานะเกาะกำแพง
+        _anim.SetBool("IsWallSliding", _isWallSliding);
+
+        // ส่งสถานะใช้ Skill (Hooking หรืออื่นๆ)
+        // สมมติว่า Hook คือการใช้ Skill ของหน้ากากนี้
+        _anim.SetBool("IsUsingSkill", isHooking); 
+    }
+    private void HandleWalkSound()
+    {
+        // เงื่อนไข: เดิน + อยู่บนพื้น + ไม่ไถลกำแพง
+        if (_canJump && _moveInput.x != 0 && !_isWallSliding)
+        {
+            // ถ้ากลับมาเดินแล้ว ให้รีเซ็ตตัวนับเวลาหยุดเป็น 0
+            _stopDurationTimer = 0f;
+
+            _currentWalkTimer -= Time.deltaTime;
+
+            if (_currentWalkTimer <= 0)
+            {
+                if (walkSound != null && _audioSource != null)
+                {
+                    _audioSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
+                    _audioSource.PlayOneShot(walkSound);
+                }
+                _currentWalkTimer = walkStepInterval;
+            }
+        }
+        else
+        {
+            // ถ้าหยุดเดิน อย่าเพิ่งรีเซ็ตเสียงทันที!
+            // ให้นับเวลาดูว่าหยุดนานหรือยัง?
+            _stopDurationTimer += Time.deltaTime;
+
+            // ถ้าหยุดนิ่งเกิน 0.15 วินาที ค่อยถือว่า "หยุดจริง" แล้วค่อยรีเซ็ต
+            // (ค่า 0.15f ปรับได้ ถ้ายังรัวอยู่ให้เพิ่มขึ้นนิดหน่อย)
+            if (_stopDurationTimer > 0.15f)
+            {
+                _currentWalkTimer = 0;
+            }
+        }
+    }
     private void CameraTransitionTicking()
     {
         if (CurrentCameraTransitionCooldown > 0)
@@ -144,20 +232,27 @@ public class PlayerController : MonoBehaviour
         
         if (hit != null)
         {
-            // --- แก้ไขตรงนี้ ---
-            // ลองดึง Component BreakablePlatform ออกมา
-            BreakablePlatform breakable = hit.GetComponent<BreakablePlatform>();
-            if (breakable != null)
+            // 1. Spawn Effect ตรงจุดที่ชน
+            // หาจุดกึ่งกลางระหว่างเรากับของที่ชน เพื่อความแม่นยำ
+            Vector2 hitPos = (transform.position + hit.transform.position) / 2;
+            
+            // คำนวณมุมหมุน Effect (ให้พุ่งสวนทางกับทิศที่เราชน)
+            Quaternion rot = Quaternion.LookRotation(_facingRight ? Vector3.right : Vector3.left);
+            
+            if (dashImpactPrefab != null)
             {
-                breakable.Break(); // สั่งให้พัง
+                Instantiate(dashImpactPrefab, hitPos, rot);
             }
-            else
-            {
-                Destroy(hit.gameObject); // เผื่อไว้สำหรับของที่ไม่มี Script
-            }
-            // ------------------
 
-            // กระแทกตัวผู้เล่นกลับ
+            // 2. เรียก Hit Stop (หยุดเวลา)
+            StartCoroutine(HitStopRoutine());
+
+            // 3. Logic การทำลายของเดิม
+            BreakablePlatform breakable = hit.GetComponent<BreakablePlatform>();
+            if (breakable != null) breakable.Break();
+            else Destroy(hit.gameObject);
+
+            // 4. กระแทกกลับ
             int direction = _facingRight ? -1 : 1; 
             _rb.linearVelocity = Vector2.zero; 
             _rb.AddForce(new Vector2(-knockbackForce.x * direction, knockbackForce.y), ForceMode2D.Impulse);
@@ -165,6 +260,20 @@ public class PlayerController : MonoBehaviour
             OnEndDashing();
         }
     }
+
+    // ฟังก์ชันหยุดเวลา (Hit Stop)
+    private IEnumerator HitStopRoutine()
+    {
+        // หยุดเวลาเกือบสนิท (อย่าใช้ 0 เพราะอาจมีปัญหากับบางระบบ ใช้ค่าน้อยๆ แทน)
+        Time.timeScale = 0.01f; 
+        
+        // รอเวลา (ใช้ Realtime เพราะ timeScale โดนลดอยู่)
+        yield return new WaitForSecondsRealtime(hitStopDuration);
+        
+        // คืนค่าเวลา
+        Time.timeScale = 1f;
+    }
+
 
     // ... (CheckTouchingWall, HandleWallSlide, MaskCooldownTicking, FreezeGravity เหมือนเดิม) ...
     private void CheckTouchingWall()
@@ -223,7 +332,16 @@ public class PlayerController : MonoBehaviour
 
     private void CheckCanJump()
     {
+        // 1. เก็บสถานะเก่าไว้ก่อน (ว่าเฟรมที่แล้วอยู่บนพื้นไหม)
+        bool wasGrounded = _canJump;
+
+        // 2. อัปเดตสถานะปัจจุบัน
         _canJump = Physics2D.Raycast(transform.position, Vector2.down, jumpCheckRange, groundMask);
+        
+        if (!wasGrounded && _canJump && _rb.linearVelocity.y <= 0.1f)
+        {
+            SpawnDust(); // เรียก Effect ฝุ่น
+        }
     }
     
     // ... (PlayerMove, FlipSprite, ChangeMask, UseSkill, JumpStart, JumpStop, OnDrawGizmos เหมือนเดิม) ...
@@ -258,10 +376,45 @@ public class PlayerController : MonoBehaviour
     }
     private void ChangeMask(int changeIndex)
     {
-        if (_currentSwapCooldown > 0 || currentMaskType == (MaskType)changeIndex) return;
+        if (_currentSwapCooldown > 0 && currentMaskType != (MaskType)changeIndex) return;
+
         currentMaskType = (MaskType)changeIndex;
         _currentFreezeGravityTime = freezeGravityTime;
         _currentSwapCooldown = cooldownInterval;
+
+        // [ส่วนที่เพิ่มใหม่] : เปลี่ยน Animator และ Collider
+        ApplyMaskVisuals(changeIndex);
+        switch (currentMaskType)
+        {
+            case MaskType.Dash:
+                _transition.TriggerDashTransition();
+                break;
+            case MaskType.Hook:
+                _transition.TriggerHookTranstion();
+                break;
+            case MaskType.Jump:
+                _transition.TriggerPlatformTransition();
+                break;
+        }
+    }
+    private void ApplyMaskVisuals(int maskIndex)
+    {
+        if (allMask.Count <= maskIndex || allMask[maskIndex] == null) return;
+
+        MaskBase selectedMask = allMask[maskIndex];
+
+        // 1. เปลี่ยน Animation Set (Override Controller)
+        if (selectedMask.animatorOverride != null)
+        {
+            _anim.runtimeAnimatorController = selectedMask.animatorOverride;
+        }
+
+        // 2. ปรับขนาดตัว (Collider)
+        if (_col != null)
+        {
+            //_col.size = selectedMask.colliderSize;
+            //_col.offset = selectedMask.colliderOffset;
+        }
     }
 
     private void UseSkill()
@@ -276,6 +429,7 @@ public class PlayerController : MonoBehaviour
         if (allMask[(int)currentMaskType] == null || allMask.Count == 0 || !_canJump) return;
         float jumpHeight = allMask[(int)currentMaskType].maskData.jumpHeight;
         _rb.AddForce(Vector3.up * jumpHeight, ForceMode2D.Impulse);
+        SpawnDust();
     }
 
     private void JumpStop()
@@ -410,7 +564,8 @@ public class PlayerController : MonoBehaviour
         _rb.gravityScale = 0; 
 
         hookLineRenderer.enabled = true;
-
+        Instantiate(HookImpact,targetPos,Quaternion.identity);
+        AudioManager.instance.PlayOneShotSFX(hookSound);
         // --- กรณีที่ 1: ดึงตัวผู้เล่นไปหาจุด (Spiderman style) ---
         if (target.hookType == HookTarget.HookType.PullPlayerToPoint)
         {
@@ -452,17 +607,57 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Spike"))
+        if (other.CompareTag("Spike") && !isDead)
         {
-            // Play Animation Dead then Reset
-            // Animation Dead will cal OnPlayerDie
-            OnPlayerDie();
+            diePS.Play();
+            DeathCount.instance.addDeathCount();
+            AudioManager.instance.PlayOneShotSFX(damageSound);
+            GetComponent<SpriteRenderer>().enabled = false;
+            StartCoroutine(OnPlayerDie());
         }
     }
 
-    private void OnPlayerDie()
+    IEnumerator OnPlayerDie()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        isDead = true;
+        // หยุดการเคลื่อนที่
+        _rb.linearVelocity = Vector2.zero;
+        _rb.bodyType = RigidbodyType2D.Static; // ล็อคตัวไว้ก่อน
+
+        yield return new WaitForSeconds(.75f);
+        
+        // --- เริ่มกระบวนการเกิดใหม่ ---
+
+        // 1. สั่งรีเซ็ต Platform และ Orb ทั้งหมด
+        if (LevelManager.instance != null) 
+            LevelManager.instance.RespawnAllObjects();
+
+        // 2. ย้ายไปจุดเกิดของห้องปัจจุบัน
+        if (LevelManager.instance != null)
+        {
+            Transform respawnPoint = LevelManager.instance.GetSpawnPoint(CurrentRoomIndex);
+            if (respawnPoint != null)
+            {
+                transform.position = new Vector3(respawnPoint.position.x, respawnPoint.position.y, 0f);            }
+            else
+            {
+                Debug.LogWarning($"No Spawn Point found for Room {CurrentRoomIndex}");
+            }
+        }
+
+        // 3. รีเซ็ตค่า Player
+        isDead = false;
+        GetComponent<SpriteRenderer>().enabled = true;
+        _rb.bodyType = RigidbodyType2D.Dynamic; // ปลดล็อค
+        _rb.linearVelocity = Vector2.zero;
+        
+        // รีเซ็ต Cooldown ต่างๆ (ถ้าจำเป็น)
+        // _currentSwapCooldown = 0;
+    }
+
+    private void SpawnDust()
+    {
+        dustPS.Play();
     }
     
     private void OnDrawGizmos()
@@ -491,6 +686,7 @@ public class PlayerController : MonoBehaviour
     public void OnStartDashing()
     {
         isDashing = true; 
+        AudioManager.instance.PlayOneShotSFX(dashSound);
         // แค่เปิด Boolean แล้วให้ Update ทำงานต่อ
     }
 

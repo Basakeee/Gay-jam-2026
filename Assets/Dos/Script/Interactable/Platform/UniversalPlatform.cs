@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UniversalPlatform : MonoBehaviour
+public class UniversalPlatform : MonoBehaviour , IResettable
 {
     // เพิ่ม FallingWaypoint ใน Enum
     public enum PlatformType { Static, Moving, Falling, FallingWaypoint, HookMove, HookMoveBack }
@@ -43,6 +43,11 @@ public class UniversalPlatform : MonoBehaviour
     [Header("Lock Config")]
     public bool isLocked = false;
     public GameObject lockVisuals;
+    
+    [Header("SFX Config")]
+    public AudioClip stickySound; // เสียงตอนเหยียบพื้นหนืด
+    public AudioClip weakBreakSound; // เสียงตอนพื้นพัง
+    public AudioClip dropSound; // เสียงตอนเริ่มร่วง
 
     private Rigidbody2D _rb;
     private Collider2D _col;
@@ -58,6 +63,7 @@ public class UniversalPlatform : MonoBehaviour
         _initialRotation = transform.rotation;
 
         if (_rb == null) _rb = gameObject.AddComponent<Rigidbody2D>();
+        if (LevelManager.instance != null) LevelManager.instance.RegisterResettable(this);
 
         // ถ้าเป็น Falling ปกติ ให้เป็น Kinematic ก่อน (รอเหยียบค่อย Dynamic)
         // ถ้าเป็น FallingWaypoint ให้เป็น Kinematic ตลอดไป (เราคุมตำแหน่งเอง)
@@ -227,6 +233,7 @@ public class UniversalPlatform : MonoBehaviour
 
         if (surfaceType == SurfaceType.Sticky)
         {
+            if(stickySound != null) AudioManager.instance.PlayOneShotSFX(stickySound);
             if (_playerController != null)
             {
                 _originalPlayerSpeed = _playerController.speed;
@@ -263,6 +270,8 @@ public class UniversalPlatform : MonoBehaviour
     {
         yield return new WaitForSeconds(destroyDelay);
 
+        if (weakBreakSound != null) AudioManager.instance.PlayOneShotSFX(weakBreakSound);
+        
         _col.enabled = false;
         GetComponent<SpriteRenderer>().enabled = false;
 
@@ -274,13 +283,21 @@ public class UniversalPlatform : MonoBehaviour
 
     private IEnumerator FallRoutine()
     {
+        if (dropSound != null) AudioManager.instance.PlayOneShotSFX(dropSound);
+        
         _isFalling = true;
         yield return new WaitForSeconds(fallDelay);
 
         _rb.bodyType = RigidbodyType2D.Dynamic;
         _rb.gravityScale = fallGravity;
     }
-
+    public void ResetState()
+    {
+        ResetPlatform(); // เรียกฟังก์ชันเดิมที่คุณมีอยู่แล้ว
+        
+        // เพิ่มเติม: ถ้าเป็น Locked Platform ต้องกลับไป Lock เหมือนเดิมไหม?
+        // if (lockVisuals != null) isLocked = true; UpdateLockVisuals(); // ถ้าต้องการ
+    }
     public void ResetPlatform()
     {
         _rb.bodyType = RigidbodyType2D.Kinematic;

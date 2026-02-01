@@ -16,4 +16,4 @@ MonoBehaviour:
     jumpHeight: 5
     wallFrictionSlide: 1
     cooldownInterval: 2
-    currentCooldown: -0.0013371534
+    currentCooldown: 0

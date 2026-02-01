@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3868871089122133196}
   - component: {fileID: 2457117286812604960}
   - component: {fileID: 6450135884013277873}
+  - component: {fileID: 7864621812015460886}
   m_Layer: 8
   m_Name: Breakable Wall
   m_TagString: Untagged
@@ -138,3 +139,17 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &7864621812015460886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6360155213672570442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7044f7db8a555d449ab641351d60dcd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BreakablePlatform
+  breakEffect: {fileID: 6145854677200143934, guid: 87dfa69dd72f5914b9ddf1c5ffcbf703, type: 3}
+  respawnTime: 3

@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnlockOrb
   targetPlatform: {fileID: 0}
-  pickupEffect: {fileID: 0}
+  pickupEffect: {fileID: 2393111809793729749, guid: 05609566f0df27848962c113cb77d33c, type: 3}
 --- !u!58 &9152703832655655575
 CircleCollider2D:
   m_ObjectHideFlags: 0

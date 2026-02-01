@@ -16,6 +16,17 @@ MonoBehaviour:
     jumpHeight: 5
     wallFrictionSlide: 1
     cooldownInterval: 2
-    currentCooldown: -0.001737345
+    currentCooldown: 0
+  animatorOverride: {fileID: 22100000, guid: 9ff95d71def025c489849492c9a5aa5f, type: 2}
+  colliderSize: {x: 1, y: 2}
+  colliderOffset: {x: 0, y: 0}
   platformPrefab: {fileID: 4682657227911560102, guid: 8df404112d97dec40a41e2205ecea415, type: 3}
   timePlatformLast: 3
+  checkRadius: 0.5
+  whatIsGround:
+    serializedVersion: 2
+    m_Bits: 448
+  spawnParticles: {fileID: 9127285602379864169, guid: 05609566f0df27848962c113cb77d33c, type: 3}
+  destroyParticles: {fileID: 300441128924476784, guid: 9d292543345e17f47a88af867d7eabbd, type: 3}
+  spawnSound: {fileID: 0}
+  destroySound: {fileID: 0}
