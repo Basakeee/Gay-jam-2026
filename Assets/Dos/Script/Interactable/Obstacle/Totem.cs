@@ -6,7 +6,7 @@ public class Totem : BreakablePlatform
     private List<UnlockOrb> unlockOrbs = new List<UnlockOrb>();
     private List<UnlockOrb> collectOrb = new List<UnlockOrb>();
     public static Totem instance;
-    private void Start()
+    private void Awake()
     {
         if(instance == null)
         {

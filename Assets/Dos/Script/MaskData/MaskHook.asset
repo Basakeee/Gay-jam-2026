@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: MaskHook
   m_EditorClassIdentifier: Assembly-CSharp::MaskHook
   maskData:
-    jumpHeight: 5
+    jumpHeight: 8
     wallFrictionSlide: 1
     cooldownInterval: 2
-    currentCooldown: 0.6338233
+    currentCooldown: -0.0118857315
   animatorOverride: {fileID: 22100000, guid: 21bce1e120e11064a80277fb146cff2c, type: 2}
   colliderSize: {x: 1, y: 2}
   colliderOffset: {x: 0, y: 0}

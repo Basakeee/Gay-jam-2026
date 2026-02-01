@@ -18,6 +18,6 @@ public class DeathCount : MonoBehaviour
     public void addDeathCount()
     {
         deathCount++;
-        deathCountText.text = deathCount.ToString();
+        deathCountText.text = $"Deaths: {deathCount}";
     }
 }

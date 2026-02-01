@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MaskPlatform
   m_EditorClassIdentifier: Assembly-CSharp::MaskPlatform
   maskData:
-    jumpHeight: 5
+    jumpHeight: 8
     wallFrictionSlide: 1
     cooldownInterval: 2
     currentCooldown: -0.0015638592

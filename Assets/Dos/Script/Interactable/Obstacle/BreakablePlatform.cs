@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.U2D;
 
 public class BreakablePlatform : MonoBehaviour
 {
@@ -8,11 +9,12 @@ public class BreakablePlatform : MonoBehaviour
 
     private Collider2D _col;
     private SpriteRenderer _ren;
-
+    private SpriteShapeRenderer ssr;
     private void Awake()
     {
         _col = GetComponent<Collider2D>();
         _ren = GetComponent<SpriteRenderer>();
+        ssr = GetComponent<SpriteShapeRenderer>();  
     }
 
     public virtual void Break()
@@ -23,9 +25,7 @@ public class BreakablePlatform : MonoBehaviour
         _col.enabled = false;
         _ren.enabled = false;
 
-        // ถ้ามีการเกิดใหม่
-        if (respawnTime > 0) StartCoroutine(RespawnRoutine());
-        else Destroy(gameObject, 1f); // พังถาวร (Delay 1 วิเผื่อเสียงจบ)
+        Destroy(gameObject);
     }
 
     private IEnumerator RespawnRoutine()
@@ -33,5 +33,6 @@ public class BreakablePlatform : MonoBehaviour
         yield return new WaitForSeconds(respawnTime);
         _col.enabled = true;
         _ren.enabled = true;
+        ssr.enabled = true;
     }
 }

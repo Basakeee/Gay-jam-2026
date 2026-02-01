@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: DashMask
   m_EditorClassIdentifier: Assembly-CSharp::MaskDash
   maskData:
-    jumpHeight: 5
+    jumpHeight: 9
     wallFrictionSlide: 2
     cooldownInterval: 2
-    currentCooldown: -0.0020414335
+    currentCooldown: -0.014622759
   animatorOverride: {fileID: 22100000, guid: 8f136ff23b5114349a1d13eec36878a1, type: 2}
   colliderSize: {x: 1, y: 2}
   colliderOffset: {x: 0, y: 0}
