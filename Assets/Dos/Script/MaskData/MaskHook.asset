@@ -16,9 +16,9 @@ MonoBehaviour:
     jumpHeight: 5
     wallFrictionSlide: 1
     cooldownInterval: 2
-    currentCooldown: -0.0016732225
+    currentCooldown: 0.6338233
   animatorOverride: {fileID: 22100000, guid: 21bce1e120e11064a80277fb146cff2c, type: 2}
   colliderSize: {x: 1, y: 2}
   colliderOffset: {x: 0, y: 0}
-  hookRange: 10
+  hookRange: 15
   hookSpeed: 15

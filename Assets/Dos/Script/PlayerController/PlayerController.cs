@@ -183,10 +183,6 @@ public class PlayerController : MonoBehaviour
 
         // ส่งสถานะเกาะกำแพง
         _anim.SetBool("IsWallSliding", _isWallSliding);
-
-        // ส่งสถานะใช้ Skill (Hooking หรืออื่นๆ)
-        // สมมติว่า Hook คือการใช้ Skill ของหน้ากากนี้
-        _anim.SetBool("IsUsingSkill", isHooking); 
     }
     private void HandleWalkSound()
     {
@@ -389,8 +385,9 @@ public class PlayerController : MonoBehaviour
     private void ChangeMask(int changeIndex)
     {
         if (_currentSwapCooldown > 0 && currentMaskType != (MaskType)changeIndex) return;
-
+        if (changeIndex > allMask.Count - 1) return;
         currentMaskType = (MaskType)changeIndex;
+
         _currentFreezeGravityTime = freezeGravityTime;
         _currentSwapCooldown = cooldownInterval;
 
@@ -778,6 +775,7 @@ public class PlayerController : MonoBehaviour
     }
     public void AddNewMask(MaskBase newMask)
     {
+        if(allMask.Contains(newMask)) return;
         allMask.Add(newMask);
     }
     // Getter
@@ -785,5 +783,5 @@ public class PlayerController : MonoBehaviour
     public Transform GetPlatformSpawnPos() => _platformSpawnPos;
     public bool IsDashing() => isDashing; // เผื่อ MaskDash อยากเช็ค
     
-    public enum MaskType { Normal, Dash, Jump, Hook }
+    public enum MaskType { Normal, Dash, Hook, Jump }
 }

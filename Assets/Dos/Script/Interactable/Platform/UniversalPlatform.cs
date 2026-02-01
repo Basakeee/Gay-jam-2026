@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.U2D;
 
 public class UniversalPlatform : MonoBehaviour , IResettable
 {
@@ -309,7 +310,10 @@ public class UniversalPlatform : MonoBehaviour , IResettable
         _hasFallenToWaypoint = false; // รีเซ็ตสถานะร่วง
 
         _col.enabled = true;
-        GetComponent<SpriteRenderer>().enabled = true;
+        if(gameObject.TryGetComponent<SpriteRenderer>(out var sr))
+            sr.enabled = true;
+        else if (gameObject.TryGetComponent<SpriteShapeRenderer>(out var ssr))
+            ssr.enabled = true;
         
         if (_activeHookCoroutine != null) StopCoroutine(_activeHookCoroutine);
         
